@@ -1,0 +1,61 @@
+{
+  "label": "ab-superinstructions",
+  "date": "2026-10-05 02:55",
+  "machine": "Linux-6.18.44-fc-v70-x86_64-with-glibc2.39",
+  "cpu_count": 2,
+  "runs": 7,
+  "a": "no-super",
+  "b": "super",
+  "rows": [
+    {
+      "name": "binary_trees",
+      "median_a": 0.35793359999843233,
+      "median_b": 0.34140923599989037
+    },
+    {
+      "name": "closures",
+      "median_a": 0.30252462399948854,
+      "median_b": 0.2976558959999238
+    },
+    {
+      "name": "enum_dispatch",
+      "median_a": 0.7761490779994347,
+      "median_b": 0.6326404889987316
+    },
+    {
+      "name": "fib",
+      "median_a": 0.19385356800012232,
+      "median_b": 0.16845028799980355
+    },
+    {
+      "name": "loop_sum",
+      "median_a": 0.7493129829999816,
+      "median_b": 0.7061280609996174
+    },
+    {
+      "name": "mandelbrot",
+      "median_a": 0.34297848700043687,
+      "median_b": 0.3111711589990591
+    },
+    {
+      "name": "matrix",
+      "median_a": 0.38412467100170034,
+      "median_b": 0.36187185299968405
+    },
+    {
+      "name": "quicksort",
+      "median_a": 0.9496768080007314,
+      "median_b": 0.8161440180010686
+    },
+    {
+      "name": "sieve",
+      "median_a": 1.322457262998796,
+      "median_b": 1.280737783999939
+    },
+    {
+      "name": "strings",
+      "median_a": 0.20470538399968063,
+      "median_b": 0.20651978500063706
+    }
+  ]
+}

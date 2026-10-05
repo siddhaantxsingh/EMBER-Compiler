@@ -1,0 +1,6 @@
+error[lexical]: integer literal does not fit in 64 bits
+  --> int_literal_overflow.em:2:11
+  |
+2 |     print(9223372036854775808);
+  |           ^^^^^^^^^^^^^^^^^^^
+

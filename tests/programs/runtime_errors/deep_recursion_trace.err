@@ -1,0 +1,17 @@
+RuntimeError: division by zero
+  at r (deep_recursion_trace.em:2:26)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  ... 17 more frames ...
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at r (deep_recursion_trace.em:3:12)
+  at main (deep_recursion_trace.em:7:11)

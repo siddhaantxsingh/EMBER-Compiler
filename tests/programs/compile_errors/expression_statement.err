@@ -1,0 +1,7 @@
+error[syntax]: expression statement has no effect
+  --> expression_statement.em:2:5
+  |
+2 |     1 + 2;
+  |     ^^^^^
+  = only calls and match expressions can be used as statements
+

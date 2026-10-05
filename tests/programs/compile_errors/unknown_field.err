@@ -1,0 +1,7 @@
+error[type]: struct 'P' has no field 'y'
+  --> unknown_field.em:4:13
+  |
+4 |     print(p.y);
+  |             ^
+  = available fields: x
+

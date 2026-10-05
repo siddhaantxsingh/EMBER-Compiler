@@ -1,0 +1,2 @@
+RuntimeError: invalid conversion: nan does not fit in Int
+  at main (invalid_conversion_nan.em:2:11)

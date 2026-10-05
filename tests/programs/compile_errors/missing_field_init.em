@@ -1,0 +1,4 @@
+struct P { x: Int, y: Int }
+fn main() {
+    let p = P { x: 1 };
+}

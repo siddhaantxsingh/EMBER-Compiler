@@ -1,0 +1,10 @@
+()
+Empty {}
+Maybe::Some(3)
+Maybe::None
+[[1, 2], [3]]
+[1.0, 2.5]
+[a, b]
+Node { value: 1, next: [Node { value: 2, next: [] }] }
+[[0]]
+true

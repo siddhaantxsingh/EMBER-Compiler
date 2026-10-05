@@ -1,0 +1,2 @@
+RuntimeError: integer overflow
+  at main (abs_overflow.em:4:11)

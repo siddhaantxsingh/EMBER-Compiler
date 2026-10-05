@@ -1,0 +1,3 @@
+RuntimeError: division by zero
+  at average (division_by_zero.em:4:14)
+  at main (division_by_zero.em:9:11)

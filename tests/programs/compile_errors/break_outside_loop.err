@@ -1,0 +1,6 @@
+error[name]: 'break' outside of a loop
+  --> break_outside_loop.em:2:5
+  |
+2 |     break;
+  |     ^^^^^^
+

@@ -1,0 +1,9 @@
+error[type]: cannot add Int and String
+  --> type_mismatch_add.em:2:15
+  |
+2 |     let x = 1 + "a";
+  |               ^
+  = expected: Int
+  = found: String
+  = '+' works on two Ints, two Floats or two Strings (use str() or float() to convert)
+

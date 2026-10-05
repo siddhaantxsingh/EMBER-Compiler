@@ -1,0 +1,7 @@
+error[name]: global 'b' is used before its declaration
+  --> global_order.em:1:9
+  |
+1 | var a = b + 1;
+  |         ^
+  = globals are initialized in source order
+

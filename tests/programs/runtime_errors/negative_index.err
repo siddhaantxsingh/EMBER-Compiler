@@ -1,0 +1,2 @@
+RuntimeError: index out of bounds: index -1 for length 3
+  at main (negative_index.em:3:11)

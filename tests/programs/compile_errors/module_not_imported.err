@@ -1,0 +1,7 @@
+error[module]: module 'math' is not imported
+  --> module_not_imported.em:2:11
+  |
+2 |     print(math.sqrt(2.0));
+  |           ^^^^
+  = add 'import math;' at the top of the file
+

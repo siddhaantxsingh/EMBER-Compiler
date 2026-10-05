@@ -1,0 +1,7 @@
+# Resume bullets — Ember (pick 2–4)
+
+- Built **Ember**, a statically typed language in C++20 (~12.6k LOC): Pratt parser with error recovery, type checker with closure-capture analysis, typed CFG IR with a dominance-checking validator and trap-preserving optimizer, stack-bytecode compiler, and an independent VM with a precise mark-and-sweep GC.
+- Designed a versioned, CRC-checked bytecode format with a bounds-checked decoder and an abstract-interpretation **verifier**, so untrusted bytecode can never cause memory errors; fuzzed decoder, verifier and VM with 5 libFuzzer targets under ASan/UBSan (millions of executions, no crashes).
+- Wrote an independent reference interpreter and a random well-typed program generator for **differential testing** (20,000 programs per run across -O0/-O1/serialized/GC-stress, 0 failures); it caught a lowering bug and a non-determinism bug in the generator.
+- Improved interpreter performance **0–40%** across 10 benchmarks with profile-driven computed-goto dispatch, a counting-free hot loop and superinstructions chosen from opcode-pair profiles, validated with interleaved A/B measurements; diagnosed a 30% regression caused by a conditional move before indirect dispatch.
+- Shipped developer tooling: source-level debugger (breakpoints, step/next/finish, locals), comment-preserving idempotent formatter, REPL, disassembler and opcode profiler; CI with GCC/Clang, sanitizers and fuzz smoke tests.

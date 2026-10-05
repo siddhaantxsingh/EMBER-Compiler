@@ -1,0 +1,6 @@
+error[name]: undefined name 'y'
+  --> undefined_name.em:2:11
+  |
+2 |     print(y);
+  |           ^
+

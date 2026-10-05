@@ -1,0 +1,6 @@
+error[type]: missing field(s) in struct literal: y
+  --> missing_field_init.em:3:13
+  |
+3 |     let p = P { x: 1 };
+  |             ^^^^^^^^^^
+

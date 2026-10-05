@@ -1,0 +1,4 @@
+RuntimeError: uninitialized variable: 'v' was used before its declaration ran
+  at main.late (uninitialized_capture.em:8:16)
+  at main.early (uninitialized_capture.em:3:15)
+  at main (uninitialized_capture.em:5:5)

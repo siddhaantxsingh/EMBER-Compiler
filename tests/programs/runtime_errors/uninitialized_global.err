@@ -1,0 +1,3 @@
+RuntimeError: uninitialized global: 'b' was read before its initializer ran
+  at read_b (uninitialized_global.em:5:12)
+  at <globals> (uninitialized_global.em:1:9)

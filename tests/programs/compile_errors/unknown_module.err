@@ -1,0 +1,7 @@
+error[module]: unknown module 'nosuch'
+  --> unknown_module.em:1:1
+  |
+1 | import nosuch;
+  | ^^^^^^^^^^^^^
+  = available modules: math, strings, time
+

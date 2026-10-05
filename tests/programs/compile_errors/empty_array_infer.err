@@ -1,0 +1,7 @@
+error[type]: cannot infer the type of an empty array
+  --> empty_array_infer.em:2:14
+  |
+2 |     let xs = [];
+  |              ^^
+  = add a type annotation, e.g. let xs: [Int] = [];
+

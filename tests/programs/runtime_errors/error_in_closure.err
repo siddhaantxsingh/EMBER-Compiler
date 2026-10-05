@@ -1,0 +1,4 @@
+RuntimeError: division by zero
+  at <lambda@6:15> (error_in_closure.em:6:46)
+  at apply (error_in_closure.em:2:12)
+  at main (error_in_closure.em:8:11)

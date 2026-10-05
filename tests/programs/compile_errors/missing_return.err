@@ -1,0 +1,7 @@
+error[type]: function 'f' may reach the end without returning a value
+  --> missing_return.em:1:17
+  |
+1 | fn f(a: Int) -> Int {
+  |                 ^^^
+  = declared return type: Int
+

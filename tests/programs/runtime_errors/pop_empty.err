@@ -1,0 +1,2 @@
+RuntimeError: empty array: pop from an empty array
+  at main (pop_empty.em:4:11)

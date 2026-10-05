@@ -1,0 +1,7 @@
+error[name]: cannot assign to immutable binding 'x'
+  --> immutable_assign.em:3:5
+  |
+3 |     x = 2;
+  |     ^
+  = declared at line 2; use 'var' to make it mutable
+

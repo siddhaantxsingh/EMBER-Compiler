@@ -1,0 +1,6 @@
+error[type]: 'main' must take no parameters and return Unit
+  --> main_signature.em:1:4
+  |
+1 | fn main(x: Int) {}
+  |    ^^^^
+

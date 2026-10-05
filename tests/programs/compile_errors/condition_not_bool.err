@@ -1,0 +1,8 @@
+error[type]: mismatched types in if condition
+  --> condition_not_bool.em:2:8
+  |
+2 |     if 1 { print(1); }
+  |        ^
+  = expected: Bool
+  = found: Int
+

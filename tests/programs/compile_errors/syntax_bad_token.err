@@ -1,0 +1,14 @@
+error[lexical]: unexpected character '@'
+  --> syntax_bad_token.em:2:15
+  |
+2 |     let x = 1 @ 2;
+  |               ^
+
+error[syntax]: expected ';' after variable declaration
+  --> syntax_bad_token.em:2:17
+  |
+2 |     let x = 1 @ 2;
+  |                 ^
+  = expected: ';'
+  = found: integer literal
+

@@ -1,0 +1,61 @@
+{
+  "label": "ab-rotation-layout",
+  "date": "2026-10-05 02:48",
+  "machine": "Linux-6.18.44-fc-v70-x86_64-with-glibc2.39",
+  "cpu_count": 2,
+  "runs": 5,
+  "a": "neither",
+  "b": "rotation+layout",
+  "rows": [
+    {
+      "name": "binary_trees",
+      "median_a": 0.3339563680001447,
+      "median_b": 0.32216781199986144
+    },
+    {
+      "name": "closures",
+      "median_a": 0.28921176999938325,
+      "median_b": 0.29780776200004766
+    },
+    {
+      "name": "enum_dispatch",
+      "median_a": 0.8512022410004647,
+      "median_b": 0.7792941750003592
+    },
+    {
+      "name": "fib",
+      "median_a": 0.19140117000006285,
+      "median_b": 0.19621640300010768
+    },
+    {
+      "name": "loop_sum",
+      "median_a": 0.7688091790005274,
+      "median_b": 0.7555663809998805
+    },
+    {
+      "name": "mandelbrot",
+      "median_a": 0.3421403130005274,
+      "median_b": 0.35533112400025857
+    },
+    {
+      "name": "matrix",
+      "median_a": 0.41406500300035987,
+      "median_b": 0.39399915300055
+    },
+    {
+      "name": "quicksort",
+      "median_a": 0.9339536529996622,
+      "median_b": 0.928360134000286
+    },
+    {
+      "name": "sieve",
+      "median_a": 1.3157997379994413,
+      "median_b": 1.3585261449998143
+    },
+    {
+      "name": "strings",
+      "median_a": 0.20538554199993087,
+      "median_b": 0.21265307100020436
+    }
+  ]
+}

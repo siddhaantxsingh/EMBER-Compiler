@@ -1,0 +1,2 @@
+RuntimeError: out of memory (heap limit 2097152 bytes)
+  at main (out_of_memory.em:6:15)

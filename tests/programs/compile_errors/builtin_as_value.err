@@ -1,0 +1,6 @@
+error[name]: builtin 'print' can only be called, not used as a value
+  --> builtin_as_value.em:2:13
+  |
+2 |     let p = print;
+  |             ^^^^^
+

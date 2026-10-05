@@ -1,0 +1,9 @@
+/build*/
+/out/
+*.embc
+difftest-fail-*.em
+crash-*
+leak-*
+timeout-*
+/fuzz/corpus-*/
+/bench/results/*.tmp

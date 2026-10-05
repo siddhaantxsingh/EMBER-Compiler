@@ -1,0 +1,8 @@
+error[syntax]: expected ';' after variable declaration
+  --> syntax_missing_semicolon.em:3:5
+  |
+3 |     print(x);
+  |     ^^^^^
+  = expected: ';'
+  = found: identifier
+

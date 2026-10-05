@@ -1,0 +1,4 @@
+Line { from: Point { x: 1, y: 2 }, to: Point { x: 4, y: -2 }, label: diag }
+7
+10
+Point { x: 4, y: -3 }

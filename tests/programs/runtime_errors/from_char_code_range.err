@@ -1,0 +1,2 @@
+RuntimeError: invalid argument: character code 300 is not in 0..255
+  at main (from_char_code_range.em:4:11)

@@ -1,0 +1,12 @@
+error[lexical]: unterminated string literal
+  --> unterminated_string.em:2:11
+  |
+2 |     print("oops);
+  |           ^^^^^^^
+
+error[syntax]: expected an expression, found '}'
+  --> unterminated_string.em:3:1
+  |
+3 | }
+  | ^
+

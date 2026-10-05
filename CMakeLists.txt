@@ -1,0 +1,72 @@
+cmake_minimum_required(VERSION 3.20)
+project(ember VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+option(EMBER_ASAN "Build with AddressSanitizer" OFF)
+option(EMBER_UBSAN "Build with UndefinedBehaviorSanitizer" OFF)
+option(EMBER_FUZZ "Build libFuzzer targets (requires clang)" OFF)
+option(EMBER_WERROR "Treat warnings as errors" ON)
+
+set(EMBER_WARNINGS -Wall -Wextra -Wpedantic -Wnon-virtual-dtor -Wcast-align
+    -Wnull-dereference -Wimplicit-fallthrough)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  list(APPEND EMBER_WARNINGS -Wshadow=local)
+else()
+  list(APPEND EMBER_WARNINGS -Wshadow-uncaptured-local)
+endif()
+if(EMBER_WERROR)
+  list(APPEND EMBER_WARNINGS -Werror)
+endif()
+
+set(EMBER_SAN_FLAGS "")
+if(EMBER_ASAN)
+  list(APPEND EMBER_SAN_FLAGS -fsanitize=address -fno-omit-frame-pointer)
+endif()
+if(EMBER_UBSAN)
+  list(APPEND EMBER_SAN_FLAGS -fsanitize=undefined -fno-sanitize-recover=undefined)
+endif()
+if(EMBER_FUZZ)
+  # Coverage instrumentation for every library linked into fuzz targets.
+  list(APPEND EMBER_SAN_FLAGS -fsanitize=fuzzer-no-link)
+endif()
+add_compile_options(${EMBER_SAN_FLAGS})
+add_link_options(${EMBER_SAN_FLAGS})
+
+# Layered libraries. The VM (ember_vm) links only ember_bc and ember_common:
+# it cannot see the compiler. scripts/check_layering.sh enforces the same
+# rule on #include lines.
+function(ember_library name)
+  file(GLOB_RECURSE srcs CONFIGURE_DEPENDS ${ARGN})
+  add_library(${name} STATIC ${srcs})
+  target_include_directories(${name} PUBLIC ${CMAKE_SOURCE_DIR}/src)
+  target_compile_options(${name} PRIVATE ${EMBER_WARNINGS})
+endfunction()
+
+ember_library(ember_common src/common/*.cc)
+ember_library(ember_bc src/bc/*.cc)
+target_link_libraries(ember_bc PUBLIC ember_common)
+ember_library(ember_vm src/vm/*.cc)
+target_link_libraries(ember_vm PUBLIC ember_bc)
+ember_library(ember_compiler src/front/*.cc src/sema/*.cc src/ir/*.cc src/codegen/*.cc src/driver/*.cc)
+target_link_libraries(ember_compiler PUBLIC ember_bc)
+ember_library(ember_tools src/tools/*.cc)
+target_link_libraries(ember_tools PUBLIC ember_compiler ember_vm)
+
+add_executable(ember src/cli/main.cc)
+target_link_libraries(ember PRIVATE ember_tools)
+target_compile_options(ember PRIVATE ${EMBER_WARNINGS})
+
+enable_testing()
+if(EXISTS ${CMAKE_SOURCE_DIR}/tests/CMakeLists.txt)
+  add_subdirectory(tests)
+endif()
+if(EMBER_FUZZ)
+  add_subdirectory(fuzz)
+endif()

@@ -1,0 +1,8 @@
+error[type]: mismatched types in argument 1
+  --> wrong_arg_type.em:3:13
+  |
+3 |     print(f(true));
+  |             ^^^^
+  = expected: Int
+  = found: Bool
+

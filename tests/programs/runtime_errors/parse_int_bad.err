@@ -1,0 +1,2 @@
+RuntimeError: invalid conversion: "12a" is not an integer
+  at main (parse_int_bad.em:3:11)

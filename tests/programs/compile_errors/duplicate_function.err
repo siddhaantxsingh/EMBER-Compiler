@@ -1,0 +1,7 @@
+error[name]: 'f' is already declared in this scope
+  --> duplicate_function.em:2:4
+  |
+2 | fn f() {}
+  |    ^
+  = previous declaration at line 1
+

@@ -1,0 +1,6 @@
+error[type]: cannot index a value of type Int
+  --> index_non_array.em:3:11
+  |
+3 |     print(x[0]);
+  |           ^
+

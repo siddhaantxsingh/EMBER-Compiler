@@ -1,0 +1,25 @@
+error[type]: mismatched types in variable initializer
+  --> multiple_errors.em:2:18
+  |
+2 |     let a: Int = "s";
+  |                  ^^^
+  = expected: Int
+  = found: String
+
+error[type]: mismatched types in variable initializer
+  --> multiple_errors.em:3:19
+  |
+3 |     let b: Bool = 3;
+  |                   ^
+  = expected: Bool
+  = found: Int
+
+error[type]: cannot add Int and Bool
+  --> multiple_errors.em:4:15
+  |
+4 |     let c = 1 + true;
+  |               ^
+  = expected: Int
+  = found: Bool
+  = '+' works on two Ints, two Floats or two Strings (use str() or float() to convert)
+

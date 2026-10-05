@@ -1,0 +1,3 @@
+RuntimeError: panic: n is too big: 3
+  at check (panic.em:2:16)
+  at main (panic.em:8:9)

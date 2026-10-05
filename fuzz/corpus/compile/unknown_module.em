@@ -1,0 +1,2 @@
+import nosuch;
+fn main() {}

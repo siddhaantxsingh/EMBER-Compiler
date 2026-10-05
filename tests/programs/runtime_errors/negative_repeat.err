@@ -1,0 +1,2 @@
+RuntimeError: invalid argument: negative array length -1
+  at main (negative_repeat.em:3:14)

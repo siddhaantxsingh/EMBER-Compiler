@@ -1,0 +1,7 @@
+error[name]: 'x' is already declared in this scope
+  --> redeclared_local.em:3:9
+  |
+3 |     let x = 2;
+  |         ^
+  = previous declaration at line 2
+

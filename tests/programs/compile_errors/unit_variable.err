@@ -1,0 +1,7 @@
+error[type]: variable 'u' would have type Unit
+  --> unit_variable.em:3:13
+  |
+3 |     let u = nothing();
+  |             ^^^^^^^^^
+  = the initializer produces no value
+

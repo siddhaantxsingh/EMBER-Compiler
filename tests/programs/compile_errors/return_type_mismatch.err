@@ -1,0 +1,8 @@
+error[type]: mismatched types in return value
+  --> return_type_mismatch.em:2:12
+  |
+2 |     return 1;
+  |            ^
+  = expected: String
+  = found: Int
+

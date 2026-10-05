@@ -1,0 +1,6 @@
+error[type]: enum 'E' has no variant 'Z'
+  --> unknown_variant.em:3:13
+  |
+3 |     let e = E::Z;
+  |             ^^^^
+

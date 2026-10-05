@@ -1,0 +1,6 @@
+error[type]: cannot call a value of type Int
+  --> call_non_function.em:3:5
+  |
+3 |     x(1);
+  |     ^
+
