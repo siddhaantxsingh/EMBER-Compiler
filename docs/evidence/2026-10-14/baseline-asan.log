@@ -1,0 +1,20 @@
+[0/2] Re-checking globbed directories...
+[1/5] Linking CXX executable tests/difftest
+[2/5] Linking CXX executable ember
+[3/5] Building CXX object tests/CMakeFiles/unit_tests.dir/unit/main.cc.o
+[4/5] Building CXX object tests/CMakeFiles/unit_tests.dir/unit/tools_test.cc.o
+[5/5] Linking CXX executable tests/unit_tests
+Internal ctest changing into directory: /home/user/ember-compiler/build-asan
+Test project /home/user/ember-compiler/build-asan
+    Start 1: difftest
+1/4 Test #1: difftest .........................   Passed   12.00 sec
+    Start 2: unit
+2/4 Test #2: unit .............................   Passed    2.80 sec
+    Start 3: golden
+3/4 Test #3: golden ...........................   Passed    3.87 sec
+    Start 4: cli
+4/4 Test #4: cli ..............................   Passed    7.26 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  25.92 sec
