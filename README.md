@@ -438,7 +438,7 @@ boundary for untrusted programs.
 |---|---|---|
 | Fresher-portfolio strength | 8/10 | Strong, tested end-to-end stack, but a single author's evidence; no external users. |
 | Engineering maturity | 7/10 | Good differential/fuzz/sanitizer coverage; native backend has no GC and is not run under ASan. |
-| Deployment readiness | 4/10 | No releases or packages; CI on GitHub not confirmed from the build container. |
+| Deployment readiness | 5/10 | CI is green, but there are no releases, packages or install docs beyond a source build. |
 | Completion of intended scope | 7/10 | Backend, opt-equivalence, GC stress and fuzzing done; native GC, AOT, reference-language benchmarks missing. |
 
 <div align="center">

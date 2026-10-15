@@ -1,6 +1,6 @@
 # Owner actions
 
-1. **Check CI on the branch** `ccr-a6e6c567-y4w7k8` at
+1. **CI** was green on run 38740180634 (commit a7a19b3). Re-check after later pushes on the branch `ccr-a6e6c567-y4w7k8` at
    https://github.com/siddhaantxsingh/EMBER-Compiler/actions. Success: all
    jobs green (gcc-debug, gcc-release incl. native difftest, clang-asan-ubsan
    incl. GC stress suite, fuzz-smoke, benchmarks-smoke).

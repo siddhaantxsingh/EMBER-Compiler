@@ -24,6 +24,6 @@ Evidence paths are under `docs/evidence/2026-10-14/`.
 | 17 | Benchmarks vs Python/Lua reference | NOT IMPLEMENTED | NOT IMPLEMENTED | Lua not installed; Python ports not written |
 | 18 | Native backend under ASan | NOT IMPLEMENTED | NOT IMPLEMENTED | ASan config builds with `-DEMBER_LLVM=OFF` |
 | 19 | AOT (object file / executable) output | NOT IMPLEMENTED | NOT IMPLEMENTED | only JIT and `--emit-llvm` text |
-| 20 | CI runs the new tests | n/a | IMPLEMENTED BUT UNVERIFIED | `.github/workflows/ci.yml` updated; see final report for run status |
+| 20 | CI runs the new tests | FAILED (layering script not executable) | VERIFIED: GitHub Actions run 38740180634 green, all 5 jobs (gcc-release runs native difftest 300 seeds, -O0 comparison; clang-asan-ubsan runs GC-stress suite; fuzz-smoke 5x60 s) | `.github/workflows/ci.yml` |
 
-Counts (final): VERIFIED 14, IMPLEMENTED BUT UNVERIFIED 1, NOT IMPLEMENTED 5 (rows 7, 15, 17, 18, 19). See `docs/AUDIT_2026-10-14.md`.
+Counts (final): VERIFIED 15, IMPLEMENTED BUT UNVERIFIED 0, NOT IMPLEMENTED 5 (rows 7, 15, 17, 18, 19). See `docs/AUDIT_2026-10-14.md`.
