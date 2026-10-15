@@ -258,6 +258,8 @@ ember disasm prog.em
 ember ir prog.em
 ember ast prog.em
 ember run --profile prog.em
+ember native prog.em             # LLVM backend: JIT-compile and run
+ember native --emit-llvm prog.em # print the optimized LLVM IR
 ```
 
 ### Diagnostics
@@ -282,6 +284,23 @@ RuntimeError: division by zero
 
 ------------------------------------------------------------------------
 
+## ⚡ Native backend (LLVM)
+
+`ember native file.em` lowers the optimized typed IR to LLVM IR, runs
+LLVM's O2 pipeline and JIT-compiles it with ORC (LLVM 18, optional at
+build time). It covers the whole language, including strings, arrays,
+structs, enums and closures. Runtime errors, messages and stack traces
+match the VM exactly. It has no garbage collector, and VM-only options
+(`--max-steps`, `--max-heap`, `--gc-stress`, `--profile`) make it exit
+with status 6 instead of running. Details: `src/native/backend.h`,
+[`docs/AUDIT_2026-10-14.md`](docs/AUDIT_2026-10-14.md).
+
+Measured on 2026-10-14 (shared 4-vCPU container, load average ~11,
+median of 3 runs, JIT compile time included): 2.2x to 10.8x faster than
+the VM on the 10 bench programs (`docs/evidence/2026-10-14/bench-native.log`).
+
+------------------------------------------------------------------------
+
 ## 🧪 Verification & testing
 
 Ember uses several independent testing layers.
@@ -289,7 +308,7 @@ Ember uses several independent testing layers.
   Layer                                                         Recorded result
   ----------------------------- -----------------------------------------------
   Unit tests                                                   **61 / 61 PASS**
-  Golden programs                                                   **90 PASS**
+  Golden programs                                                   **91 PASS**
   CLI checks                                                        **31 PASS**
   Differential testing            **20,000 seeds, 0 failures, 11 inconclusive**
   libFuzzer targets                  **5 targets, no crashes in recorded runs**
@@ -298,7 +317,14 @@ Ember uses several independent testing layers.
   Layering check                                                       **PASS**
   Benchmark output validation                                          **PASS**
 
-The final audit also records what was **not** run: remote GitHub
+Re-run on 2026-10-14 (`docs/evidence/2026-10-14/`): ctest 6/6 (with the
+native backend), ASan+UBSan 4/4, golden suite with `--gc-stress` under
+ASan 91/91, VM -O0 vs -O1 identical on 72/73 programs (the other is the
+instruction-budget test, which depends on optimization by design),
+native backend identical to the VM on 68/68 supported programs and on
+3000 generated programs, 5 fuzzers x 60 s with no crashes.
+
+The original final audit also records what was **not** run: remote GitHub
 Actions, hour-scale fuzzing, and cross-platform builds.
 
 ### Test the verifier
@@ -341,6 +367,8 @@ Requirements:
 -   C++20 compiler (GCC 12+ or Clang 15+)
 -   Python 3
 -   Ninja optional
+-   optional: LLVM 18 dev files (`llvm-18-dev`) for `ember native`
+-   for clang sanitizer/fuzzer builds: `libclang-rt-18-dev`
 
 ``` bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -396,12 +424,22 @@ Not currently provided:
 -   Unicode-aware string operations
 -   incremental compilation
 -   generational/incremental GC
--   JIT compilation
+-   garbage collection in the native backend (it uses an arena freed at exit)
+-   ahead-of-time native executables (the LLVM backend is JIT only)
 
 **Security:** Ember is not a hostile-code sandbox. Use an OS/container
 boundary for untrusted programs.
 
 ------------------------------------------------------------------------
+
+## Scorecard (2026-10-14 self-assessment)
+
+| Area | Score | Why not higher |
+|---|---|---|
+| Fresher-portfolio strength | 8/10 | Strong, tested end-to-end stack, but a single author's evidence; no external users. |
+| Engineering maturity | 7/10 | Good differential/fuzz/sanitizer coverage; native backend has no GC and is not run under ASan. |
+| Deployment readiness | 4/10 | No releases or packages; CI on GitHub not confirmed from the build container. |
+| Completion of intended scope | 7/10 | Backend, opt-equivalence, GC stress and fuzzing done; native GC, AOT, reference-language benchmarks missing. |
 
 <div align="center">
 **A language project becomes a systems project when correctness, trust

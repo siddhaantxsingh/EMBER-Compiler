@@ -28,6 +28,7 @@ rm -f /tmp/ember-layering.$$
 check common common
 check bc bc common
 check vm vm bc common
+check native native ir common
 for d in front sema ir codegen driver; do
     check $d front sema ir codegen driver bc common
 done
