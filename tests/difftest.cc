@@ -5,6 +5,8 @@
 //   * compiler -O0 + VM
 //   * -O1 bytecode encoded to the file format, decoded, then run
 //   * -O1 with the GC in stress mode (collect before every allocation)
+//   * with --native (LLVM builds only): the native backend on the -O1 IR
+//     and on the -O0 IR
 // Usage: difftest [--seeds N] [--start S] [--stress-every K] [--verbose] | --print SEED
 // Exit status 0 iff all seeds agree. A failing seed's program is written to
 // difftest-fail-<seed>.em for reproduction.
@@ -19,6 +21,9 @@
 #include "tools/progen.h"
 #include "tools/refinterp.h"
 #include "vm/vm.h"
+#ifdef EMBER_HAVE_LLVM
+#include "native/backend.h"
+#endif
 
 using namespace ember;
 
@@ -48,6 +53,30 @@ Outcome run_vm(const bc::Module& m, bool stress) {
     return o;
 }
 
+#ifdef EMBER_HAVE_LLVM
+// Returns false with `why` set when the backend could not run the program
+// (unsupported / internal error) -- always a failure for generated programs.
+bool run_native(const ir::Module& m, Outcome& o, std::string& why) {
+    std::ostringstream out;
+    std::istringstream in;
+    native::NativeOptions no;
+    no.max_call_depth = 2000;
+    auto r = native::compile_and_run(m, out, in, no);
+    if (r.unsupported) {
+        why = "native backend rejected the program: " + r.unsupported_reason;
+        return false;
+    }
+    if (r.internal_error) {
+        why = "native backend internal error: " + r.internal_message;
+        return false;
+    }
+    o.out = out.str();
+    o.ok = r.outcome.ok;
+    o.error = r.outcome.message;
+    return true;
+}
+#endif
+
 bool same(const Outcome& a, const Outcome& b) { return a.out == b.out && a.ok == b.ok && a.error == b.error; }
 
 std::string describe(const Outcome& o) {
@@ -62,6 +91,8 @@ int main(int argc, char** argv) {
     uint64_t seeds = 200, start = 1;
     int stress_every = 10;
     bool verbose = false;
+    bool native_too = false;
+    uint64_t native_runs = 0;
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
         auto next = [&]() -> std::string { return i + 1 < argc ? argv[++i] : ""; };
@@ -69,6 +100,7 @@ int main(int argc, char** argv) {
         else if (a == "--start") start = std::strtoull(next().c_str(), nullptr, 10);
         else if (a == "--stress-every") stress_every = std::atoi(next().c_str());
         else if (a == "--verbose") verbose = true;
+        else if (a == "--native") native_too = true;
         else if (a == "--print") {
             std::cout << generate_program(std::strtoull(next().c_str(), nullptr, 10));
             return 0;
@@ -147,9 +179,33 @@ int main(int argc, char** argv) {
                 continue;
             }
         }
+#ifdef EMBER_HAVE_LLVM
+        if (native_too) {
+            Outcome n1, n0;
+            std::string why;
+            if (!run_native(c1->ir, n1, why)) {
+                fail(why);
+                continue;
+            }
+            if (!same(ref, n1)) {
+                fail("native -O1 IR disagrees\n=== reference: " + describe(ref) + "\n=== native: " + describe(n1));
+                continue;
+            }
+            if (!run_native(c0->ir, n0, why) || !same(ref, n0)) {
+                fail("native -O0 IR disagrees " + why + "\n=== reference: " + describe(ref) + "\n=== native: " + describe(n0));
+                continue;
+            }
+            ++native_runs;
+        }
+#endif
         if (verbose) std::cerr << "seed " << seed << ": ok" << (ref.ok ? "" : " (error: " + ref.error + ")") << "\n";
     }
     std::cout << "difftest: " << seeds << " programs, " << failures << " failures, " << inconclusive
-              << " inconclusive (limits), " << errors_agreed << " ended in an agreed runtime error\n";
+              << " inconclusive (limits), " << errors_agreed << " ended in an agreed runtime error";
+    if (native_too) std::cout << ", " << native_runs << " also checked on the native backend (-O1 and -O0 IR)";
+#ifndef EMBER_HAVE_LLVM
+    if (native_too) std::cout << " [--native ignored: built without LLVM]";
+#endif
+    std::cout << "\n";
     return failures == 0 ? 0 : 1;
 }

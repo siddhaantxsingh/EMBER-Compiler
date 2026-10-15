@@ -20,3 +20,13 @@ if(Python3_FOUND)
   add_test(NAME golden COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_golden.py $<TARGET_FILE:ember>)
   add_test(NAME cli COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cli_tests.py $<TARGET_FILE:ember>)
 endif()
+
+if(EMBER_HAVE_LLVM)
+  # Native backend vs VM on every test/bench/example program (exact stdout,
+  # stderr and exit status), and on generated programs vs the reference
+  # interpreter.
+  if(Python3_FOUND)
+    add_test(NAME native_programs COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/native_difftest.py $<TARGET_FILE:ember>)
+  endif()
+  add_test(NAME native_difftest COMMAND difftest --seeds 40 --start 500000 --native)
+endif()

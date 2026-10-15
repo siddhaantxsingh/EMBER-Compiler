@@ -7,13 +7,14 @@
 //   * locals, globals (with the "read before initializer" check), direct
 //     calls, recursion (with the VM's call-depth limit), branches, loops
 //   * strings: constants, concat, len, index, comparison, str(), print()
+//   * arrays of any supported element kind (including nested arrays):
+//     literals, [x; n], index get/set, len, push, pop, for-each
 //   * natives: print, str, input, parse_int, panic, assert, math.*,
-//     strings.{substr,find,upper,lower,char_code,from_char_code,repeat},
+//     strings.*,
 //     time.clock
 // Not supported (the program is rejected with a reason, never miscompiled):
-// closures and upvalues, indirect calls, structs, enums, arrays,
-// strings.split / strings.join. Strings are arena-allocated and never
-// collected (see runtime.h).
+// closures and upvalues, indirect calls / function values, structs, enums.
+// Strings and arrays are arena-allocated and never collected (runtime.h).
 #pragma once
 
 #include <iosfwd>

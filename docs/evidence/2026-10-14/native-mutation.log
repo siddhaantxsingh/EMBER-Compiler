@@ -1,0 +1,25 @@
+MUTANT: imod -1 guard removed 
+ difftest: 150 programs, 0 failures, 0 inconclusive (limits), 57 ended in an agreed runtime error, 150 also checked on the native backend (-O1 and -O0 IR)
+MUTANT: fcmp ne ordered 
+ difftest: 150 programs, 0 failures, 0 inconclusive (limits), 57 ended in an agreed runtime error, 150 also checked on the native backend (-O1 and -O0 IR)
+MUTANT: close upvalues no-op 
+ native: exit 0 stdout b'2\n2\n2\n20\n20\n20\n' stderr b''
+difftest: 150 programs, 0 failures, 0 inconclusive (limits), 57 ended in an agreed runtime error, 150 also checked on the native backend (-O1 and -O0 IR)
+MUTANT: f2i bound OLE 
+ difftest: 150 programs, 2 failures, 0 inconclusive (limits), 57 ended in an agreed runtime error, 148 also checked on the native backend (-O1 and -O0 IR)
+MUTANT: array bound ugt 
+ native: exit 0 stdout b'ok: 5\nerror: division by zero\n0\n' stderr b''
+MUTANT: max is min 
+ native: exit 0 stdout b'5\n2.5\n-4\n-4\n4.0\n1024.0\n-2.0\n-1.0\nnan\n' stderr b''
+difftest: 150 programs, 75 failures, 0 inconclusive (limits), 57 ended in an agreed runtime error, 75 also checked on the native backend (-O1 and -O0 IR)
+MUTANT: depth not restored on return 
+ native: exit 3 stdout b'ok: 5\nerror: division by zero\n' stderr b'RuntimeError: index out of bounds: index 3 for length 3\n  at safe_div (errors.em:6:16)\n  at safe_div (errors.em:8:12)\n  at main (errors.em:23:11)\n  at <globals> (errors.em)\n'
+difftest: 150 programs, 0 failures, 0 inconclusive (limits), 57 ended in an agreed runtime error, 150 also checked on the native backend (-O1 and -O0 IR)
+ 1 file changed, 247 insertions(+), 37 deletions(-)
+RECHECK mutant 1 with numeric_edges.em:
+MISMATCH tests/programs/run/numeric_edges.em
+programs: 73, supported by native backend: 68, agreed with VM -O1: 67, mismatches: 1, rejected: 5
+ 1 file changed, 247 insertions(+), 37 deletions(-)
+RECHECK mutant 2 with numeric_edges.em:
+MISMATCH tests/programs/run/numeric_edges.em
+programs: 73, supported by native backend: 68, agreed with VM -O1: 67, mismatches: 1, rejected: 5

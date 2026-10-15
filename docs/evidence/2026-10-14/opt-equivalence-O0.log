@@ -1,0 +1,15 @@
+MISMATCH tests/programs/runtime_errors/instruction_limit.em
+  vm:     exit 3 stdout b'' stderr b'RuntimeError: instruction limit exceeded\n  at main (instruction_limit.em:5:9)\n'
+  native: exit 3 stdout b'' stderr b'RuntimeError: instruction limit exceeded\n  at main (instruction_limit.em:4:11)\n'
+
+programs: 73, supported by VM -O0: 73, agreed with VM -O1: 72, mismatches: 1, rejected: 0
+FAIL runtime_errors/instruction_limit.em: err differs:
+--- expected
+RuntimeError: instruction limit exceeded
+  at main (instruction_limit.em:5:9)
+--- actual
+RuntimeError: instruction limit exceeded
+  at main (instruction_limit.em:4:11)
+ 
+
+golden: 91 programs, 1 failures

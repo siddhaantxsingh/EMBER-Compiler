@@ -1,0 +1,6 @@
+difftest: 3000 programs, 0 failures, 1 inconclusive (limits), 1112 ended in an agreed runtime error, 2999 also checked on the native backend (-O1 and -O0 IR)
+
+real	14m58.310s
+user	5m19.984s
+sys	0m6.264s
+ 21:03:42 up 26 min,  0 user,  load average: 44.39, 38.02, 26.35

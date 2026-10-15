@@ -68,40 +68,18 @@ Support check_support(const ir::Module& m) {
     };
     if (natives().size() != kClock + 1u) reject("native table changed; backend needs updating");
     for (const auto& f : m.functions) {
-        if (!f.upvalue_kinds.empty() || !f.captures.empty()) reject("closure with captured variables" + where(f));
         for (const auto& b : f.blocks)
             for (const auto& in : b.instrs) {
                 switch (in.op) {
-                    case Op::LoadUpval:
-                    case Op::StoreUpval:
-                    case Op::ClearLocal:
-                    case Op::MakeClosure:
-                    case Op::CloseUpvalues:
-                    case Op::CallIndirect: reject(std::string("closures / function values (") + ir::op_name(in.op) + ")" + where(f)); break;
-                    case Op::MakeStruct:
-                    case Op::GetField:
-                    case Op::SetField: reject(std::string("structs (") + ir::op_name(in.op) + ")" + where(f)); break;
-                    case Op::MakeArray:
-                    case Op::ArrayRepeat:
-                    case Op::ArrayGet:
-                    case Op::ArraySet:
-                    case Op::ArrayLen:
-                    case Op::ArrayPush:
-                    case Op::ArrayPop: reject(std::string("arrays (") + ir::op_name(in.op) + ")" + where(f)); break;
-                    case Op::MakeEnum:
-                    case Op::EnumTag:
-                    case Op::EnumField: reject(std::string("enums (") + ir::op_name(in.op) + ")" + where(f)); break;
                     case Op::CallNative:
-                        if (in.imm == kSplit || in.imm == kJoin)
-                            reject(std::string("strings.") + natives()[static_cast<size_t>(in.imm)].name + " (returns or takes an array)" + where(f));
                         if (in.imm < 0 || in.imm > kClock) reject("unknown native" + where(f));
                         break;
                     default: break;
                 }
             }
     }
-    // With every non-string reference producer rejected above, every value
-    // of kind Ref in the module is a string.
+    // Every value of kind Ref is a string, array, struct, enum or closure,
+    // told apart by a header tag.
     return s;
 }
 
@@ -215,6 +193,18 @@ private:
         rt("ember_rt_char_code", i64_, {ptr_, i64_});
         rt("ember_rt_from_char_code", ptr_, {i64_});
         rt("ember_rt_repeat", ptr_, {ptr_, i64_});
+        rt("ember_rt_print_ref", void_, {ptr_});
+        rt("ember_rt_str_ref", ptr_, {ptr_});
+        rt("ember_rt_array_new", ptr_, {i64_, i64_});
+        rt("ember_rt_array_repeat", ptr_, {i64_, i64_, i64_});
+        rt("ember_rt_index_error", void_, {i64_, i64_}, true);
+        rt("ember_rt_array_push", void_, {ptr_, i64_});
+        rt("ember_rt_array_pop", i64_, {ptr_});
+        rt("ember_rt_split", ptr_, {ptr_, ptr_});
+        rt("ember_rt_join", ptr_, {ptr_, ptr_});
+        rt("ember_rt_alloc_obj", ptr_, {i64_, i64_});
+        rt("ember_rt_alloc_cell", ptr_, {i64_, i64_});
+        rt("ember_rt_trap_uninit", void_, {ptr_}, true);
         // Pure runtime helpers LLVM may treat as readnone.
         for (const char* n : {"ember_rt_scmp", "ember_rt_find"}) rt_[n]->setOnlyReadsMemory();
     }
@@ -236,8 +226,9 @@ private:
         auto it = strconst_.find(s);
         if (it != strconst_.end()) return it->second;
         auto* data = llvm::ConstantDataArray::getString(ctx_, s, true);
-        auto* sty = llvm::StructType::get(ctx_, {i64_, data->getType()}, true);
-        auto* init = llvm::ConstantStruct::get(sty, {llvm::ConstantInt::get(i64_, static_cast<int64_t>(s.size())), data});
+        auto* sty = llvm::StructType::get(ctx_, {i64_, i64_, data->getType()}, true);
+        auto* init = llvm::ConstantStruct::get(
+            sty, {llvm::ConstantInt::get(i64_, kTagString), llvm::ConstantInt::get(i64_, static_cast<int64_t>(s.size())), data});
         auto* gv = new llvm::GlobalVariable(mod_, sty, true, llvm::GlobalValue::PrivateLinkage, init, "str");
         gv->setAlignment(llvm::Align(8));
         gv->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
@@ -248,7 +239,7 @@ private:
     // ---- functions
     void declare_function(size_t i) {
         const auto& f = m_.functions[i];
-        std::vector<llvm::Type*> params;
+        std::vector<llvm::Type*> params{ptr_};  // hidden first parameter: the closure (or null)
         for (Kind k : f.param_kinds) params.push_back(ty(k));
         auto* fty = llvm::FunctionType::get(ty(f.ret_kind), params, false);
         auto* fn = llvm::Function::Create(fty, llvm::Function::InternalLinkage, "em." + std::to_string(i) + "." + f.name, mod_);
@@ -261,7 +252,7 @@ private:
         auto* fn = llvm::Function::Create(fty, llvm::Function::ExternalLinkage, name, mod_);
         auto* bb = llvm::BasicBlock::Create(ctx_, "entry", fn);
         b_.SetInsertPoint(bb);
-        llvm::Value* r = b_.CreateCall(fns_[idx], {});
+        llvm::Value* r = b_.CreateCall(fns_[idx], {llvm::ConstantPointerNull::get(llvm::PointerType::get(ctx_, 0))});
         if (r->getType() != i8_) r = llvm::ConstantInt::get(i8_, 0);
         b_.CreateRet(r);
     }
@@ -275,6 +266,13 @@ private:
     llvm::Value* depth_in_ = nullptr;   // ember_rt_depth on entry
     llvm::Value* loc_slot_ = nullptr;   // &ember_rt_frame_loc[depth+1]
     Span last_loc_;
+    std::vector<bool> captured_;
+    std::vector<llvm::AllocaInst*> cells_;
+
+    llvm::Value* cell_field(llvm::Value* cell, uint64_t i) { return b_.CreateConstGEP1_64(i64_, cell, i); }
+    llvm::Value* upval_cell(int64_t idx) {
+        return b_.CreateLoad(ptr_, b_.CreateConstGEP1_64(i64_, fn_->getArg(0), 2 + static_cast<uint64_t>(idx)));
+    }
 
     void store_loc(const Span& s) {
         if (s.valid()) last_loc_ = s;
@@ -339,9 +337,18 @@ private:
             locals_.push_back(a);
         }
         for (size_t i = 0; i < f_->locals.size(); ++i) {
-            if (i < f_->num_params) b_.CreateStore(fn_->getArg(static_cast<unsigned>(i)), locals_[i]);
+            if (i < f_->num_params) b_.CreateStore(fn_->getArg(static_cast<unsigned>(i) + 1), locals_[i]);
             else b_.CreateStore(zero(f_->locals[i].kind), locals_[i]);
         }
+        // Captured locals live in heap cells { i64 bits, i64 initialized };
+        // see the comment on CloseUpvalues below.
+        captured_.assign(f_->locals.size(), false);
+        cells_.assign(f_->locals.size(), nullptr);
+        for (const auto& blk : f_->blocks)
+            for (const auto& in : blk.instrs)
+                if (in.op == Op::MakeClosure)
+                    for (const auto& cd : m_.functions[static_cast<size_t>(in.imm)].captures)
+                        if (cd.from_local) captured_[cd.index] = true;
         // Call-depth check and frame bookkeeping (VM: push_frame).
         depth_in_ = b_.CreateLoad(i64_, g_depth_, "depth");
         auto* maxd = b_.CreateLoad(i64_, g_max_depth_, "maxdepth");
@@ -362,6 +369,15 @@ private:
         auto* locarr = b_.CreateLoad(ptr_, g_frame_loc_);
         loc_slot_ = b_.CreateGEP(i64_, locarr, d1, "locslot");
         b_.CreateStore(llvm::ConstantInt::get(i64_, pack_loc(f_->loc)), loc_slot_);
+        for (size_t i = 0; i < f_->locals.size(); ++i) {
+            if (!captured_[i]) continue;
+            cells_[i] = b_.CreateAlloca(ptr_, nullptr, "cell");
+            Kind k = f_->locals[i].kind;
+            // Ref locals start uninitialized in the VM; others get a default.
+            llvm::Value* init = llvm::ConstantInt::get(i64_, i < f_->num_params || k != Kind::Ref ? 1 : 0);
+            llvm::Value* v = to_bits(b_.CreateLoad(ty(k), locals_[i]), k);
+            b_.CreateStore(b_.CreateCall(rt_["ember_rt_alloc_cell"], {v, init}), cells_[i]);
+        }
 
         auto order = rpo();
         for (ir::BlockId bid : order) blocks_[static_cast<size_t>(bid)] = llvm::BasicBlock::Create(ctx_, "b" + std::to_string(bid), fn_);
@@ -389,6 +405,26 @@ private:
     }
 
     llvm::Value* unit() { return llvm::ConstantInt::get(i8_, 0); }
+
+    // Array element slots are 8 bytes (see runtime.h).
+    llvm::Value* to_bits(llvm::Value* v, Kind k) {
+        switch (k) {
+            case Kind::Int: return v;
+            case Kind::Float: return b_.CreateBitCast(v, i64_);
+            case Kind::Bool:
+            case Kind::Unit: return b_.CreateZExt(v, i64_);
+            default: return b_.CreatePtrToInt(v, i64_);
+        }
+    }
+    llvm::Value* from_bits(llvm::Value* v, Kind k) {
+        switch (k) {
+            case Kind::Int: return v;
+            case Kind::Float: return b_.CreateBitCast(v, f64_);
+            case Kind::Bool: return b_.CreateICmpNE(v, llvm::ConstantInt::get(i64_, 0));
+            case Kind::Unit: return unit();
+            default: return b_.CreateIntToPtr(v, ptr_);
+        }
+    }
 
     void def(const ir::Instr& in, llvm::Value* v) {
         if (in.dst != ir::kNoTemp) temps_[static_cast<size_t>(in.dst)] = v;
@@ -451,7 +487,7 @@ private:
                     case Kind::Float: b_.CreateCall(rt_["ember_rt_print_float"], {arg(0)}); break;
                     case Kind::Bool: b_.CreateCall(rt_["ember_rt_print_bool"], {b_.CreateZExt(arg(0), i32_)}); break;
                     case Kind::Unit: b_.CreateCall(rt_["ember_rt_print_unit"], {}); break;
-                    default: b_.CreateCall(rt_["ember_rt_print_str"], {arg(0)}); break;
+                    default: call_rt("ember_rt_print_ref", {arg(0)}, in.loc, true); break;
                 }
                 return unit();
             }
@@ -462,7 +498,7 @@ private:
                     case Kind::Float: return call_rt("ember_rt_str_float", {arg(0)}, in.loc, true);
                     case Kind::Bool: return call_rt("ember_rt_str_bool", {b_.CreateZExt(arg(0), i32_)}, in.loc, true);
                     case Kind::Unit: return call_rt("ember_rt_str_unit", {}, in.loc, true);
-                    default: return arg(0);  // strings are immutable: str(s) is s
+                    default: return call_rt("ember_rt_str_ref", {arg(0)}, in.loc, true);  // str(s) is s for strings
                 }
             }
             case kNativeInput: return call_rt("ember_rt_input", {}, in.loc, true);
@@ -489,6 +525,8 @@ private:
             case kFromCharCode: return call_rt("ember_rt_from_char_code", {arg(0)}, in.loc, true);
             case kRepeat: return call_rt("ember_rt_repeat", {arg(0), arg(1)}, in.loc, true);
             case kClock: return b_.CreateCall(rt_["ember_rt_clock"], {});
+            case kSplit: return call_rt("ember_rt_split", {arg(0), arg(1)}, in.loc, true);
+            case kJoin: return call_rt("ember_rt_join", {arg(0), arg(1)}, in.loc, true);
             default: break;
         }
         throw std::logic_error("unsupported native reached the backend");
@@ -504,11 +542,96 @@ private:
             case Op::ConstString: def(in, string_const_raw(m_.strings[static_cast<size_t>(in.imm)])); break;
             case Op::ConstUnit: def(in, unit()); break;
             case Op::LoadLocal: {
-                auto* slot = locals_[static_cast<size_t>(in.imm)];
-                def(in, b_.CreateLoad(slot->getAllocatedType(), slot));
+                auto i = static_cast<size_t>(in.imm);
+                auto* slot = locals_[i];
+                if (captured_[i]) {
+                    auto* cell = b_.CreateLoad(ptr_, cells_[i]);
+                    def(in, from_bits(b_.CreateLoad(i64_, cell_field(cell, 0)), f_->locals[i].kind));
+                } else {
+                    def(in, b_.CreateLoad(slot->getAllocatedType(), slot));
+                }
                 break;
             }
-            case Op::StoreLocal: b_.CreateStore(a(0), locals_[static_cast<size_t>(in.imm)]); break;
+            case Op::StoreLocal: {
+                auto i = static_cast<size_t>(in.imm);
+                if (captured_[i]) {
+                    auto* cell = b_.CreateLoad(ptr_, cells_[i]);
+                    b_.CreateStore(to_bits(a(0), f_->locals[i].kind), cell_field(cell, 0));
+                    b_.CreateStore(I(1), cell_field(cell, 1));
+                } else {
+                    b_.CreateStore(a(0), locals_[i]);
+                }
+                break;
+            }
+            case Op::ClearLocal: {
+                auto i = static_cast<size_t>(in.imm);
+                if (captured_[i]) b_.CreateStore(I(0), cell_field(b_.CreateLoad(ptr_, cells_[i]), 1));
+                break;
+            }
+            case Op::CloseUpvalues: {
+                // VM: closures created so far keep the closed upvalue, and the
+                // next capture of the slot opens a new one with the slot's
+                // current value. Here: give each captured slot >= imm a fresh
+                // cell holding the same value; existing closures keep the old.
+                for (size_t i = static_cast<size_t>(in.imm); i < f_->locals.size(); ++i) {
+                    if (!captured_[i]) continue;
+                    auto* cell = b_.CreateLoad(ptr_, cells_[i]);
+                    auto* v = b_.CreateLoad(i64_, cell_field(cell, 0));
+                    auto* ok = b_.CreateLoad(i64_, cell_field(cell, 1));
+                    b_.CreateStore(b_.CreateCall(rt_["ember_rt_alloc_cell"], {v, ok}), cells_[i]);
+                }
+                break;
+            }
+            case Op::LoadUpval: {
+                auto* cell = upval_cell(in.imm);
+                auto* ok = b_.CreateLoad(i64_, cell_field(cell, 1));
+                auto* bad_bb = llvm::BasicBlock::Create(ctx_, "uninit", fn_);
+                auto* cont = llvm::BasicBlock::Create(ctx_, "cont", fn_);
+                b_.CreateCondBr(b_.CreateICmpEQ(ok, I(0)), bad_bb, cont);
+                b_.SetInsertPoint(bad_bb);
+                store_loc(in.loc);
+                b_.CreateCall(rt_["ember_rt_trap_uninit"], {b_.CreateGlobalStringPtr(f_->upvalue_names[static_cast<size_t>(in.imm)])});
+                b_.CreateUnreachable();
+                b_.SetInsertPoint(cont);
+                def(in, from_bits(b_.CreateLoad(i64_, cell_field(cell, 0)), f_->upvalue_kinds[static_cast<size_t>(in.imm)]));
+                break;
+            }
+            case Op::StoreUpval: {
+                auto* cell = upval_cell(in.imm);
+                b_.CreateStore(to_bits(a(0), f_->upvalue_kinds[static_cast<size_t>(in.imm)]), cell_field(cell, 0));
+                b_.CreateStore(I(1), cell_field(cell, 1));
+                break;
+            }
+            case Op::MakeClosure: {
+                const auto& child = m_.functions[static_cast<size_t>(in.imm)];
+                store_loc(in.loc);
+                auto* obj = b_.CreateCall(rt_["ember_rt_alloc_obj"],
+                                          {I(kTagClosure | (in.imm << 8)), I(2 + static_cast<int64_t>(child.captures.size()))});
+                b_.CreateStore(fns_[static_cast<size_t>(in.imm)], b_.CreateConstGEP1_64(i64_, obj, 1));
+                for (size_t c = 0; c < child.captures.size(); ++c) {
+                    const auto& cd = child.captures[c];
+                    llvm::Value* cell = cd.from_local ? static_cast<llvm::Value*>(b_.CreateLoad(ptr_, cells_[cd.index]))
+                                                      : upval_cell(cd.index);
+                    b_.CreateStore(cell, b_.CreateConstGEP1_64(i64_, obj, 2 + c));
+                }
+                def(in, obj);
+                break;
+            }
+            case Op::CallIndirect: {
+                // Well-typed IR: the closure's function has this signature (the
+                // VM re-checks it for hand-written bytecode; IR cannot differ).
+                const auto& sig = m_.signatures[static_cast<size_t>(in.imm)];
+                std::vector<llvm::Type*> pts{ptr_};
+                for (Kind k : sig.params) pts.push_back(ty(k));
+                auto* fty = llvm::FunctionType::get(ty(sig.ret), pts, false);
+                auto* clo = a(0);
+                auto* fp = b_.CreateLoad(ptr_, b_.CreateConstGEP1_64(i64_, clo, 1));
+                std::vector<llvm::Value*> args{clo};
+                for (size_t i = 1; i < in.args.size(); ++i) args.push_back(a(i));
+                store_loc(in.loc);
+                def(in, b_.CreateCall(fty, fp, args));
+                break;
+            }
             case Op::LoadGlobal: {
                 auto g = static_cast<size_t>(in.imm);
                 auto* ok = b_.CreateLoad(i1_, global_init_[g]);
@@ -571,10 +694,81 @@ private:
             case Op::BCmp:
             case Op::SCmp: def(in, cmp(in)); break;
             case Op::SConcat: def(in, call_rt("ember_rt_concat", {a(0), a(1)}, in.loc, true)); break;
-            case Op::SLen: def(in, b_.CreateLoad(i64_, a(0))); break;
+            case Op::SLen: def(in, b_.CreateLoad(i64_, b_.CreateConstGEP1_64(i64_, a(0), 1))); break;
+            case Op::MakeArray: {
+                store_loc(in.loc);
+                auto* arr = b_.CreateCall(rt_["ember_rt_array_new"], {I(static_cast<int64_t>(in.elem)), I(static_cast<int64_t>(in.args.size()))});
+                if (!in.args.empty()) {
+                    auto* data = b_.CreateLoad(ptr_, b_.CreateConstGEP1_64(i64_, arr, 3));
+                    for (size_t i = 0; i < in.args.size(); ++i)
+                        b_.CreateStore(to_bits(a(i), in.elem), b_.CreateConstGEP1_64(i64_, data, i));
+                }
+                def(in, arr);
+                break;
+            }
+            case Op::MakeStruct:
+            case Op::MakeEnum: {
+                bool st = in.op == Op::MakeStruct;
+                int64_t hdr = st ? 1 : 2;
+                int64_t tag = (st ? kTagStruct : kTagEnum) | (in.imm << 8);
+                store_loc(in.loc);
+                auto* obj = b_.CreateCall(rt_["ember_rt_alloc_obj"], {I(tag), I(hdr + static_cast<int64_t>(in.args.size()))});
+                if (!st) b_.CreateStore(I(in.imm2), b_.CreateConstGEP1_64(i64_, obj, 1));
+                const auto& kinds = st ? m_.structs[static_cast<size_t>(in.imm)].field_kinds
+                                       : m_.enums[static_cast<size_t>(in.imm)].variants[static_cast<size_t>(in.imm2)].field_kinds;
+                for (size_t i = 0; i < in.args.size(); ++i)
+                    b_.CreateStore(to_bits(a(i), kinds[i]), b_.CreateConstGEP1_64(i64_, obj, static_cast<uint64_t>(hdr) + i));
+                def(in, obj);
+                break;
+            }
+            case Op::GetField:
+            case Op::SetField: {
+                Kind fk = m_.structs[static_cast<size_t>(in.imm)].field_kinds[static_cast<size_t>(in.imm2)];
+                auto* slot = b_.CreateConstGEP1_64(i64_, a(0), 1 + static_cast<uint64_t>(in.imm2));
+                if (in.op == Op::GetField) def(in, from_bits(b_.CreateLoad(i64_, slot), fk));
+                else b_.CreateStore(to_bits(a(1), fk), slot);
+                break;
+            }
+            case Op::EnumTag: def(in, b_.CreateLoad(i64_, b_.CreateConstGEP1_64(i64_, a(0), 1))); break;
+            case Op::EnumField: {
+                auto* v = b_.CreateLoad(i64_, b_.CreateConstGEP1_64(i64_, a(0), 1));
+                trap_if(b_.CreateICmpNE(v, I(in.imm2)), kTrapWrongVariant, in.loc);
+                Kind fk = m_.enums[static_cast<size_t>(in.imm)].variants[static_cast<size_t>(in.imm2)].field_kinds[static_cast<size_t>(in.imm3)];
+                def(in, from_bits(b_.CreateLoad(i64_, b_.CreateConstGEP1_64(i64_, a(0), 2 + static_cast<uint64_t>(in.imm3))), fk));
+                break;
+            }
+            case Op::ArrayRepeat:
+                def(in, call_rt("ember_rt_array_repeat", {I(static_cast<int64_t>(in.elem)), to_bits(a(0), in.elem), a(1)}, in.loc, true));
+                break;
+            case Op::ArrayLen: def(in, b_.CreateLoad(i64_, b_.CreateConstGEP1_64(i64_, a(0), 1))); break;
+            case Op::ArrayGet:
+            case Op::ArraySet: {
+                auto* arr = a(0);
+                auto* idx = a(1);
+                auto* len = b_.CreateLoad(i64_, b_.CreateConstGEP1_64(i64_, arr, 1));
+                // Unsigned compare also catches negative indices.
+                auto* bad_bb = llvm::BasicBlock::Create(ctx_, "oob", fn_);
+                auto* cont = llvm::BasicBlock::Create(ctx_, "inb", fn_);
+                b_.CreateCondBr(b_.CreateICmpUGE(idx, len), bad_bb, cont);
+                b_.SetInsertPoint(bad_bb);
+                store_loc(in.loc);
+                b_.CreateCall(rt_["ember_rt_index_error"], {idx, len});
+                b_.CreateUnreachable();
+                b_.SetInsertPoint(cont);
+                auto* data = b_.CreateLoad(ptr_, b_.CreateConstGEP1_64(i64_, arr, 3));
+                auto* slot = b_.CreateGEP(i64_, data, idx);
+                if (in.op == Op::ArrayGet) def(in, from_bits(b_.CreateLoad(i64_, slot), in.elem));
+                else b_.CreateStore(to_bits(a(2), in.elem), slot);
+                break;
+            }
+            case Op::ArrayPush:
+                call_rt("ember_rt_array_push", {a(0), to_bits(a(1), in.elem)}, in.loc, true);
+                def(in, unit());
+                break;
+            case Op::ArrayPop: def(in, from_bits(call_rt("ember_rt_array_pop", {a(0)}, in.loc, true), in.elem)); break;
             case Op::SIndex: def(in, call_rt("ember_rt_sindex", {a(0), a(1)}, in.loc, true)); break;
             case Op::Call: {
-                std::vector<llvm::Value*> args;
+                std::vector<llvm::Value*> args{llvm::ConstantPointerNull::get(llvm::PointerType::get(ctx_, 0))};
                 for (size_t i = 0; i < in.args.size(); ++i) args.push_back(a(i));
                 store_loc(in.loc);
                 def(in, b_.CreateCall(fns_[static_cast<size_t>(in.imm)], args));
@@ -780,6 +974,22 @@ NativeRun compile_and_run(const ir::Module& m, std::ostream& out, std::istream& 
     cfg.arena_limit_bytes = opts.arena_limit_bytes;
     for (const auto& f : m.functions) cfg.function_names.push_back(f.name);
     for (const auto& g : m.globals) cfg.global_names.push_back(g.name);
+    for (const auto& st : m.structs) {
+        RtStructInfo si{st.name, st.field_names, {}};
+        for (Kind k : st.field_kinds) si.field_kinds.push_back(static_cast<int64_t>(k));
+        cfg.structs.push_back(std::move(si));
+    }
+    for (const auto& e : m.enums) {
+        RtEnumInfo ei;
+        ei.name = e.name;
+        for (const auto& v : e.variants) {
+            ei.variant_names.push_back(v.name);
+            std::vector<int64_t> ks;
+            for (Kind k : v.field_kinds) ks.push_back(static_cast<int64_t>(k));
+            ei.field_kinds.push_back(std::move(ks));
+        }
+        cfg.enums.push_back(std::move(ei));
+    }
     r.outcome = run_entry(cfg, init->toPtr<EntryFn>(), mainf->toPtr<EntryFn>());
     r.run_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - t1).count();
     return r;

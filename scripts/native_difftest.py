@@ -8,7 +8,10 @@ and examples. For each program the native backend either
     (including runtime error messages and stack traces).
 Programs that read stdin get their "// stdin:" text, as in run_golden.py.
 
-Usage: native_difftest.py path/to/ember [--llvm-opt=N] [--verbose]
+Usage: native_difftest.py path/to/ember [--llvm-opt=N] [--verbose] [--vm-o0]
+
+--vm-o0 instead compares `ember run -O1` (default) with `ember run -O0` on the
+same programs (optimization equivalence for the bytecode pipeline).
 Exit status 0 iff no supported program disagrees and at least one program
 was supported.
 """
@@ -51,7 +54,10 @@ def main():
             total += 1
             args, stdin = directives(os.path.join(full, name))
             vm = run([ember, "run", *args, name], full, stdin)
-            nat = run([ember, "native", *extra, *args, name], full, stdin)
+            if "--vm-o0" in sys.argv:
+                nat = run([ember, "run", "-O0", *args, name], full, stdin)
+            else:
+                nat = run([ember, "native", *extra, *args, name], full, stdin)
             rel = f"{d}/{name}"
             if nat[0] == 6:
                 reason = nat[2].decode(errors="replace").strip().split(": ", 2)[-1]
@@ -70,7 +76,8 @@ def main():
                 print(f"MISMATCH {rel}")
                 print(f"  vm:     exit {vm[0]} stdout {vm[1][:300]!r} stderr {vm[2][:300]!r}")
                 print(f"  native: exit {nat[0]} stdout {nat[1][:300]!r} stderr {nat[2][:300]!r}")
-    print(f"\nprograms: {total}, supported by native backend: {supported}, agreed with VM: {agreed}, "
+    what = "VM -O0" if "--vm-o0" in sys.argv else "native backend"
+    print(f"\nprograms: {total}, supported by {what}: {supported}, agreed with VM -O1: {agreed}, "
           f"mismatches: {len(failures)}, rejected: {total - supported}")
     for k, v in sorted(rejected.items(), key=lambda kv: -len(kv[1])):
         print(f"  rejected ({len(v)}): {k}")
