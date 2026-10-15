@@ -64,6 +64,12 @@ target_link_libraries(ember_tools PUBLIC ember_compiler ember_vm)
 # the IR (compiler side) and on nothing in the VM.
 set(EMBER_HAVE_LLVM OFF)
 if(NOT EMBER_LLVM STREQUAL "OFF")
+  # LLVM's CMake config runs C feature checks; prefer LLVM 18 over older
+  # versions that may also be installed (e.g. llvm-17 on GitHub runners).
+  enable_language(C)
+  if(NOT LLVM_DIR AND EXISTS /usr/lib/llvm-18/lib/cmake/llvm/LLVMConfig.cmake)
+    set(LLVM_DIR /usr/lib/llvm-18/lib/cmake/llvm)
+  endif()
   find_package(LLVM CONFIG QUIET)
   if(LLVM_FOUND AND LLVM_VERSION_MAJOR GREATER_EQUAL 18)
     set(EMBER_HAVE_LLVM ON)
