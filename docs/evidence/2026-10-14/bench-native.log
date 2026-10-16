@@ -1,0 +1,13 @@
+load before: (11.11669921875, 7.50732421875, 3.51953125)
+program              vm s  native s   jit s  speedup  output-equal
+binary_trees.em     0.373     0.114   0.038     3.3x  True
+closures.em         0.241     0.110   0.035     2.2x  True
+enum_dispatch.em    0.595     0.141   0.028     4.2x  True
+fib.em              0.170     0.077   0.014     2.2x  True
+loop_sum.em         0.616     0.071   0.023     8.7x  True
+mandelbrot.em       0.488     0.051   0.016     9.6x  True
+matrix.em           0.416     0.083   0.032     5.0x  True
+quicksort.em        0.699     0.254   0.041     2.8x  True
+sieve.em            1.330     0.123   0.024    10.8x  True
+strings.em          0.132     0.056   0.014     2.3x  True
+load after: (11.208984375, 7.8076171875, 3.72509765625)

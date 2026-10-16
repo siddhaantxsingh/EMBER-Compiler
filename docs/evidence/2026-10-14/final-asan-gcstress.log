@@ -1,0 +1,8 @@
+[43/43] Linking CXX executable tests/unit_tests
+ 08:29:13 up 17 min,  0 user,  load average: 26.61, 24.08, 13.48
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  40.76 sec
+=== golden suite with --gc-stress under ASan+UBSan
+golden: 91 programs, 0 failures

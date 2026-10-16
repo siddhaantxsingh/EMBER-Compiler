@@ -1,0 +1,58 @@
+-- The CXX compiler identification is GNU 13.3.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found Python3: /usr/bin/python3 (found version "3.13.16") found components: Interpreter 
+-- Configuring done (1.8s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/user/ember-compiler/build
+[0/2] Re-checking globbed directories...
+[1/43] Building CXX object CMakeFiles/ember_common.dir/src/common/natives.cc.o
+[2/43] Building CXX object CMakeFiles/ember_common.dir/src/common/source.cc.o
+[3/43] Building CXX object CMakeFiles/ember_bc.dir/src/bc/opcodes.cc.o
+[4/43] Building CXX object CMakeFiles/ember_common.dir/src/common/diagnostics.cc.o
+[5/43] Building CXX object CMakeFiles/ember_bc.dir/src/bc/disasm.cc.o
+[6/43] Building CXX object CMakeFiles/ember_bc.dir/src/bc/verify.cc.o
+[7/43] Building CXX object CMakeFiles/ember_bc.dir/src/bc/format.cc.o
+[8/43] Linking CXX static library libember_common.a
+[9/43] Linking CXX static library libember_bc.a
+[10/43] Building CXX object CMakeFiles/ember_vm.dir/src/vm/heap.cc.o
+[11/43] Building CXX object CMakeFiles/ember_vm.dir/src/vm/natives_rt.cc.o
+[12/43] Building CXX object CMakeFiles/ember_compiler.dir/src/codegen/codegen.cc.o
+[13/43] Building CXX object CMakeFiles/ember_compiler.dir/src/driver/driver.cc.o
+[14/43] Building CXX object CMakeFiles/ember_compiler.dir/src/front/lexer.cc.o
+[15/43] Building CXX object CMakeFiles/ember_vm.dir/src/vm/vm.cc.o
+[16/43] Linking CXX static library libember_vm.a
+[17/43] Building CXX object CMakeFiles/ember_compiler.dir/src/ir/opt.cc.o
+[18/43] Building CXX object CMakeFiles/ember_compiler.dir/src/ir/print.cc.o
+[19/43] Building CXX object CMakeFiles/ember_compiler.dir/src/front/parser.cc.o
+[20/43] Building CXX object CMakeFiles/ember_compiler.dir/src/ir/lower.cc.o
+[21/43] Building CXX object CMakeFiles/ember_compiler.dir/src/sema/types.cc.o
+[22/43] Building CXX object CMakeFiles/ember_compiler.dir/src/ir/validate.cc.o
+[23/43] Building CXX object CMakeFiles/ember_compiler.dir/src/sema/checker.cc.o
+[24/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/debugger.cc.o
+[25/43] Building CXX object CMakeFiles/ember_compiler.dir/src/sema/resolver.cc.o
+[26/43] Linking CXX static library libember_compiler.a
+[27/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/ast_print.cc.o
+[28/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/profiler.cc.o
+[29/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/formatter.cc.o
+[30/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/progen.cc.o
+[31/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/version.cc.o
+[32/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/refinterp.cc.o
+[33/43] Building CXX object CMakeFiles/ember_tools.dir/src/tools/repl.cc.o
+[34/43] Linking CXX static library libember_tools.a
+[35/43] Building CXX object tests/CMakeFiles/difftest.dir/difftest.cc.o
+[36/43] Linking CXX executable tests/difftest
+[37/43] Building CXX object tests/CMakeFiles/unit_tests.dir/unit/main.cc.o
+[38/43] Building CXX object CMakeFiles/ember.dir/src/cli/main.cc.o
+[39/43] Linking CXX executable ember
+[40/43] Building CXX object tests/CMakeFiles/unit_tests.dir/unit/backend_test.cc.o
+[41/43] Building CXX object tests/CMakeFiles/unit_tests.dir/unit/front_test.cc.o
+[42/43] Building CXX object tests/CMakeFiles/unit_tests.dir/unit/tools_test.cc.o
+[43/43] Linking CXX executable tests/unit_tests
+
+real	0m44.467s
+user	1m25.998s
+sys	0m17.500s

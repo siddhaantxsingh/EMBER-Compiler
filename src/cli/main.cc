@@ -23,12 +23,24 @@
 #include "tools/repl.h"
 #include "tools/version.h"
 #include "vm/vm.h"
+#ifdef EMBER_HAVE_LLVM
+#include "native/backend.h"
+#endif
 
 using namespace ember;
 
 namespace {
 
-enum Exit { kOk = 0, kCompileError = 1, kUsage = 2, kRuntimeError = 3, kIoError = 4, kBadBytecode = 5, kInternal = 70 };
+enum Exit {
+    kOk = 0,
+    kCompileError = 1,
+    kUsage = 2,
+    kRuntimeError = 3,
+    kIoError = 4,
+    kBadBytecode = 5,
+    kNativeUnsupported = 6,
+    kInternal = 70
+};
 
 const char* kUsageText =
     "usage: ember <command> [options] [file]\n"
@@ -45,6 +57,8 @@ const char* kUsageText =
     "  ast <file.em>               show the typed syntax tree\n"
     "  ir <file.em>                show the intermediate representation\n"
     "  tokens <file.em>            show the token stream\n"
+    "  native <file.em>            compile with the LLVM backend (JIT) and run; programs\n"
+    "                              outside the backend's subset are rejected (exit 6)\n"
     "  version                     show the version\n"
     "\n"
     "options:\n"
@@ -60,11 +74,14 @@ const char* kUsageText =
     "  --max-stack=<n>             operand stack limit in values (default 1048576)\n"
     "  --max-steps=<n>             instruction budget (default unlimited)\n"
     "  --stats                     print execution statistics to stderr\n"
+    "  --emit-llvm                 native: print the optimized LLVM IR instead of running\n"
+    "  --llvm-opt=<0..3>           native: LLVM optimization level (default 2)\n"
     "  --profile                   count executed opcodes, opcode pairs and per-function\n"
     "                              instructions; report to stderr (slower run)\n"
     "\n"
     "exit status: 0 success, 1 compile error, 2 usage error, 3 runtime error,\n"
-    "             4 I/O error, 5 invalid bytecode file, 70 internal error\n";
+    "             4 I/O error, 5 invalid bytecode file, 6 not supported by the\n"
+    "             native backend (or its string arena limit was reached), 70 internal error\n";
 
 constexpr size_t kMaxSource = 16u * 1024 * 1024;
 constexpr size_t kMaxBytecode = 64u * 1024 * 1024;
@@ -82,6 +99,9 @@ struct Options {
     bool profile = false;
     bool fmt_write = false;
     bool fmt_check = false;
+    bool emit_llvm = false;
+    bool max_heap_set = false;
+    int llvm_opt = 2;
     vm::VMOptions vm;
 };
 
@@ -228,6 +248,58 @@ int cmd_run(const Options& o, bool debug) {
     return kOk;
 }
 
+int cmd_native(const Options& o) {
+#ifdef EMBER_HAVE_LLVM
+    std::string text;
+    auto st = read_file(o.file, text, kMaxSource);
+    if (st != ReadStatus::Ok) return report_read(st, o.file, kMaxSource);
+    auto c = compile_file(o, text, Stage::IR);
+    int rc = compile_status(*c);
+    if (rc != kOk) return rc;
+    if (o.vm.instruction_budget != 0 || o.vm.gc_stress || o.profile || o.max_heap_set) {
+        std::cerr << "error: native backend: --max-steps, --max-heap, --gc-stress and --profile only apply to the VM\n";
+        return kNativeUnsupported;
+    }
+    native::NativeOptions no;
+    no.llvm_opt_level = o.llvm_opt;
+    no.max_call_depth = o.vm.max_call_depth;
+    no.max_string_bytes = o.vm.max_string_bytes;
+    if (o.emit_llvm) {
+        std::string ll, err;
+        if (!native::emit_llvm_ir(c->ir, no, ll, err)) {
+            std::cerr << "error: native backend: " << err << "\n";
+            return native::check_support(c->ir).ok ? kInternal : kNativeUnsupported;
+        }
+        std::cout << ll;
+        return kOk;
+    }
+    auto r = native::compile_and_run(c->ir, std::cout, std::cin, no);
+    std::cout.flush();
+    if (r.unsupported) {
+        std::cerr << "error: native backend does not support this program: " << r.unsupported_reason << "\n";
+        return kNativeUnsupported;
+    }
+    if (r.internal_error) {
+        std::cerr << "internal error: native backend: " << r.internal_message << "\n";
+        return kInternal;
+    }
+    if (o.stats)
+        std::cerr << "--- native stats ---\n"
+                  << "compile time:   " << r.compile_seconds << " s\n"
+                  << "run time:       " << r.run_seconds << " s\n"
+                  << "string arena:   " << r.outcome.arena_bytes << " bytes\n";
+    if (!r.outcome.ok) {
+        std::cerr << native::render_error(r.outcome, o.file);
+        return r.outcome.backend_limit ? kNativeUnsupported : kRuntimeError;
+    }
+    return kOk;
+#else
+    (void)o;
+    std::cerr << "error: this ember was built without the LLVM backend (configure with LLVM 18+ installed)\n";
+    return kNativeUnsupported;
+#endif
+}
+
 int cmd_build(const Options& o) {
     std::string text;
     auto st = read_file(o.file, text, kMaxSource);
@@ -360,6 +432,14 @@ int main(int argc, char** argv) {
             o.vm.count_instructions = true;
         } else if (a == "--profile") {
             o.profile = true;
+        } else if (a == "--emit-llvm") {
+            o.emit_llvm = true;
+        } else if (value("--llvm-opt", v)) {
+            if (v.size() != 1 || v[0] < '0' || v[0] > '3') {
+                std::cerr << "error: invalid --llvm-opt value '" << v << "'\n";
+                return kUsage;
+            }
+            o.llvm_opt = v[0] - '0';
         } else if (a == "--write") {
             o.fmt_write = true;
         } else if (a == "--check") {
@@ -370,6 +450,7 @@ int main(int argc, char** argv) {
                 return kUsage;
             }
             o.vm.max_heap_bytes = num;
+            o.max_heap_set = true;
         } else if (value("--max-depth", v)) {
             if (!parse_size(v, num) || num == 0 || num > 10'000'000) {
                 std::cerr << "error: invalid --max-depth value '" << v << "'\n";
@@ -409,7 +490,7 @@ int main(int argc, char** argv) {
         return kOk;
     }
     if (o.command == "repl") return run_repl(std::cin, std::cout, true);
-    static const char* with_file[] = {"run", "build", "check", "debug", "fmt", "disasm", "verify", "ast", "ir", "tokens"};
+    static const char* with_file[] = {"run", "build", "check", "debug", "fmt", "disasm", "verify", "ast", "ir", "tokens", "native"};
     bool known = false;
     for (const char* c : with_file) known |= o.command == c;
     if (!known) {
@@ -425,6 +506,7 @@ int main(int argc, char** argv) {
         if (o.command == "run") return cmd_run(o, false);
         if (o.command == "debug") return cmd_run(o, true);
         if (o.command == "build") return cmd_build(o);
+        if (o.command == "native") return cmd_native(o);
         if (o.command == "disasm" || o.command == "verify") return cmd_disasm_verify(o);
         return cmd_source_stage(o);
     } catch (const std::bad_alloc&) {

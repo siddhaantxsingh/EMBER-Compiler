@@ -1,0 +1,18 @@
+Internal ctest changing into directory: /home/user/ember-compiler/build
+Test project /home/user/ember-compiler/build
+    Start 1: difftest
+1/4 Test #1: difftest .........................   Passed    1.28 sec
+    Start 2: unit
+2/4 Test #2: unit .............................   Passed    0.27 sec
+    Start 3: golden
+3/4 Test #3: golden ...........................   Passed    0.55 sec
+    Start 4: cli
+4/4 Test #4: cli ..............................   Passed    1.12 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   3.23 sec
+
+real	0m3.668s
+user	0m2.028s
+sys	0m0.313s

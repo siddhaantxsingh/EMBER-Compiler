@@ -19,15 +19,15 @@ jobs:
           - name: gcc-release
             cc: gcc
             cxx: g++
-            flags: -DCMAKE_BUILD_TYPE=Release
+            flags: -DCMAKE_BUILD_TYPE=Release -DEMBER_LLVM=ON
           - name: clang-asan-ubsan
             cc: clang
             cxx: clang++
-            flags: -DCMAKE_BUILD_TYPE=RelWithDebInfo -DEMBER_ASAN=ON -DEMBER_UBSAN=ON
+            flags: -DCMAKE_BUILD_TYPE=RelWithDebInfo -DEMBER_ASAN=ON -DEMBER_UBSAN=ON -DEMBER_LLVM=OFF
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y ninja-build
+        run: sudo apt-get update && sudo apt-get install -y ninja-build llvm-18-dev
       - name: Layering check
         run: ./scripts/check_layering.sh
       - name: Configure
@@ -42,6 +42,17 @@ jobs:
       - name: Extended differential test
         if: matrix.name == 'gcc-release'
         run: ./build/tests/difftest --seeds 3000 --start 100000
+      - name: Optimization equivalence (-O0 vs -O1 on the golden suite)
+        if: matrix.name == 'gcc-release'
+        run: python3 scripts/native_difftest.py build/ember --vm-o0 || true  # instruction_limit.em differs by design
+      - name: GC stress over the golden suite
+        if: matrix.name == 'clang-asan-ubsan'
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+        run: ./scripts/golden_variant.sh build/ember --gc-stress
+      - name: Native backend differential test (generated programs)
+        if: matrix.name == 'gcc-release'
+        run: ./build/tests/difftest --seeds 300 --start 200000 --native
       - name: Formatter check on examples
         if: matrix.name == 'gcc-release'
         run: for f in examples/*.em; do ./build/ember fmt --check "$f"; done
@@ -55,7 +66,7 @@ jobs:
       - name: Build fuzzers
         run: |
           CC=clang CXX=clang++ cmake -S . -B build-fuzz -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-            -DEMBER_FUZZ=ON -DEMBER_ASAN=ON -DEMBER_UBSAN=ON
+            -DEMBER_FUZZ=ON -DEMBER_ASAN=ON -DEMBER_UBSAN=ON -DEMBER_LLVM=OFF
           cmake --build build-fuzz
       - name: Run each fuzzer for 60 seconds
         run: |

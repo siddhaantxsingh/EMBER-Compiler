@@ -1,0 +1,2 @@
+apt-get install llvm-18-dev libclang-rt-18-dev: done; llvm-config --version: 18.1.3; includedir /usr/lib/llvm-18/include
+docker daemon: running

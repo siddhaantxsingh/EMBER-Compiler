@@ -1,0 +1,22 @@
+ 12:58:47 up 3 min,  0 user,  load average: 2.34, 1.30, 0.54
+=== fuzz_lexer (60 s)
+exit 0
+#82195	DONE   cov: 650 ft: 3314 corp: 715/181Kb lim: 802 exec/s: 1347 rss: 442Mb
+Done 82195 runs in 61 second(s)
+=== fuzz_compile (60 s)
+exit 0
+#30198	DONE   cov: 5788 ft: 16933 corp: 896/293Kb lim: 802 exec/s: 495 rss: 462Mb
+Done 30198 runs in 61 second(s)
+=== fuzz_run (60 s)
+exit 0
+#53923	DONE   cov: 6583 ft: 22666 corp: 1257/425Kb lim: 802 exec/s: 883 rss: 443Mb
+Done 53923 runs in 61 second(s)
+=== fuzz_bytecode (60 s)
+exit 0
+#654695	DONE   cov: 1290 ft: 3217 corp: 503/51Kb lim: 3359 exec/s: 10732 rss: 501Mb
+Done 654695 runs in 61 second(s)
+=== fuzz_mutate_bytecode (60 s)
+exit 0
+#80519	DONE   cov: 1057 ft: 2700 corp: 356/5303b lim: 108 exec/s: 1319 rss: 102Mb
+Done 80519 runs in 61 second(s)
+ 13:04:16 up 9 min,  0 user,  load average: 11.15, 7.39, 3.44

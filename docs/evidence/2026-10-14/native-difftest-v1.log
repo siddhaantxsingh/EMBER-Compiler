@@ -1,0 +1,8 @@
+
+programs: 72, supported by native backend: 31, agreed with VM: 31, mismatches: 0, rejected: 41
+  rejected (19): arrays
+  rejected (8): closures / function values
+  rejected (5): enums
+  rejected (5): --max-steps, --max-heap, --gc-stress and --profile only apply to the VM
+  rejected (2): structs
+  rejected (2): strings.split
